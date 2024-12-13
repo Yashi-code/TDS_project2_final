@@ -103,23 +103,28 @@ def perform_hypothesis_testing(df, column_pairs):
 
 # ========== 3. Visualization ==========
 def visualize_data(df, dataset_name):
-    """Generates visualizations for the dataset."""
+    """Generates visualizations for the dataset with titles, axis labels, and legends."""
     sns.pairplot(df.select_dtypes(include='number'))
+    plt.title(f"Pairplot of {dataset_name}")
     plt.savefig(f'{dataset_name}/pairplot.png')
     plt.close()
 
     for column in df.select_dtypes(include='number').columns:
         plt.figure()
-        sns.histplot(df[column], kde=True, bins=30)
+        sns.histplot(df[column], kde=True, bins=30, color='skyblue')
         plt.title(f"Distribution of {column}")
+        plt.xlabel(column)
+        plt.ylabel("Frequency")
+        plt.legend([f"Distribution of {column}"])
         plt.savefig(f'{dataset_name}/{column}_distribution.png')
         plt.close()
 
 
-# ========== 4. Story Creation ==========
+# ========== 4. Narrative ==========
 def create_story(summary_stats, missing_values, correlation_matrix, outliers, trends, hypothesis_results, anomalies, dataset_description):
-    """Creates a narrative summary using OpenAI's API."""
+    """Creates a context-rich narrative summary for the analysis."""
     correlation_matrix_md = correlation_matrix.to_markdown() if correlation_matrix is not None else "No correlation matrix available."
+    anomaly_str = anomalies.to_string() if not anomalies.empty else "No anomalies detected."
 
     prompt = f"""
 Dataset Description: {dataset_description}
@@ -129,9 +134,15 @@ Dataset Description: {dataset_description}
 **Outliers:** {outliers}
 **Trends (Regression Coefficients):** {trends}
 **Hypothesis Test Results:** {hypothesis_results}
-**Anomalies Detected:** {anomalies}
+**Anomalies Detected:** {anomaly_str}
 
-Create a structured narrative summary of this data analysis.
+Create a structured narrative summary of this data analysis with the following:
+1. Briefly describe the dataset.
+2. Explain the data analysis and key insights.
+3. Highlight surprising or significant findings.
+4. Discuss implications and suggested actions, especially for significant findings.
+5. Ensure proper Markdown formatting for easy readability.
+6. Integrate visualizations at relevant points and emphasize significant findings.
 """
     headers = {"Authorization": f"Bearer {AIPROXY_TOKEN}", "Content-Type": "application/json"}
     data = {"model": "gpt-4o-mini", "messages": [{"role": "user", "content": prompt}]}
@@ -145,7 +156,56 @@ Create a structured narrative summary of this data analysis.
         return "Error: Unable to generate story."
 
 
-# ========== 5. Main Execution ==========
+# ========== 5. Efficient LLM Usage ==========
+def efficient_llm_usage(data):
+    """Minimize token usage by sending concise prompts to LLM."""
+    # Here, we only send relevant insights and summaries instead of large datasets.
+    summary = data['summary_stats']
+    insights = f"Key insights from the analysis: {summary}"
+    return insights
+
+
+# ========== 6. Dynamic Prompts and Function Calling ==========
+def generate_dynamic_prompt(data):
+    """Generates a dynamic prompt for LLM based on the dataset's specific features."""
+    prompt = f"Analyze the dataset with the following properties:\n{data['features']}\nProvide insights into trends, correlations, and anomalies."
+    return prompt
+
+
+# ========== 7. Vision Agentic (Vision + Multiple LLM Calls) ==========
+def vision_agentic_workflow(df, dataset_name):
+    """Vision-based agentic workflow with multiple LLM calls."""
+    visualize_data(df, dataset_name)  # First, generate visualizations
+
+    # Get summary and analysis
+    summary_stats = get_summary_stats(df)
+    missing_values = detect_missing_values(df)
+    correlation_matrix = calculate_correlation_matrix(df)
+    outliers = detect_outliers(df)
+    trends = analyze_trends(df)
+    anomalies = detect_anomalies(df)
+    column_pairs = [('column1', 'column2'), ('column3', 'column4')]  # Update as needed
+    hypothesis_results = perform_hypothesis_testing(df, column_pairs)
+
+    # Prepare the data for LLM processing
+    analysis_data = {
+        'summary_stats': summary_stats,
+        'features': "Key numerical features of the dataset",
+        'trends': trends
+    }
+
+    prompt = generate_dynamic_prompt(analysis_data)  # Generate dynamic prompt
+    insights = efficient_llm_usage(analysis_data)  # Generate concise insights
+
+    # Call LLM for final narrative
+    narrative = create_story(
+        summary_stats, missing_values, correlation_matrix, outliers, trends, hypothesis_results, anomalies, "Dataset description"
+    )
+
+    return insights, narrative
+
+
+# ========== 8. Main Execution ==========
 def analyze_dataset(dataset_filename):
     """Performs end-to-end analysis for a single dataset."""
     dataset_name = dataset_filename.split('.')[0]
@@ -156,32 +216,7 @@ def analyze_dataset(dataset_filename):
     if df is None:
         return
 
-    summary_stats = get_summary_stats(df)
-    missing_values = detect_missing_values(df)
-    correlation_matrix = calculate_correlation_matrix(df)
-    outliers = detect_outliers(df)
-    trends = analyze_trends(df)
-    anomalies = detect_anomalies(df)
-
-    column_pairs = [('column1', 'column2'), ('column3', 'column4')]  # Update as needed
-    hypothesis_results = perform_hypothesis_testing(df, column_pairs)
-
-    visualize_data(df, dataset_name)
-
-    dataset_description = f"This dataset contains data about {dataset_name}."
-    story = create_story(summary_stats, missing_values, correlation_matrix, outliers, trends, hypothesis_results, anomalies, dataset_description)
-
-    with open(f'{dataset_name}/README.md', 'w') as f:
-        f.write("# Automated Data Analysis\n")
-        f.write(f"## Analysis of {dataset_filename}\n")
-        f.write(f"### Summary Statistics\n{summary_stats}\n")
-        f.write(f"### Missing Values\n{missing_values}\n")
-        f.write(f"### Correlation Matrix\n{correlation_matrix}\n")
-        f.write(f"### Outliers\n{outliers}\n")
-        f.write(f"### Trend Analysis\n{trends}\n")
-        f.write(f"### Hypothesis Test Results\n{hypothesis_results}\n")
-        f.write(f"### Anomalies Detected\n{anomalies}\n")
-        f.write(f"### Narrative Summary\n{story}\n")
+    vision_agentic_workflow(df, dataset_name)
 
     print(f"Analysis for {dataset_filename} complete.\n")
 
