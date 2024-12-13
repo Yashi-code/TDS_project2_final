@@ -172,6 +172,18 @@ def generate_dynamic_prompt(data):
     return prompt
 
 
+def dynamic_function_call(data, function_type="analysis"):
+    """Dynamically call the appropriate function based on the data type."""
+    if function_type == "analysis":
+        return analyze_trends(data)
+    elif function_type == "visualization":
+        return visualize_data(data, "dynamic_dataset")
+    elif function_type == "narrative":
+        return create_story(data['summary_stats'], data['missing_values'], data['correlation_matrix'], data['outliers'], data['trends'], data['hypothesis_results'], data['anomalies'], "Sample Dataset")
+    else:
+        return "Invalid function type."
+
+
 # ========== 7. Vision Agentic (Vision + Multiple LLM Calls) ==========
 def vision_agentic_workflow(df, dataset_name):
     """Vision-based agentic workflow with multiple LLM calls."""
@@ -216,6 +228,12 @@ def analyze_dataset(dataset_filename):
     if df is None:
         return
 
+    # Dynamic function calling based on data
+    dynamic_function_call(df, "analysis")
+    dynamic_function_call(df, "visualization")
+    dynamic_function_call(df, "narrative")
+
+    # Vision Agentic Workflow
     vision_agentic_workflow(df, dataset_name)
 
     print(f"Analysis for {dataset_filename} complete.\n")
