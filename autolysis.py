@@ -63,6 +63,7 @@ def analyze_trends(df):
     """Analyzes trends in numerical data using linear regression."""
     numeric_df = df.select_dtypes(include='number')
     trend_results = {}
+    
     if 'Time' in numeric_df.columns:
         X = numeric_df[['Time']]
         for column in numeric_df.columns:
@@ -71,31 +72,41 @@ def analyze_trends(df):
                 model = LinearRegression()
                 model.fit(X, y)
                 trend_results[column] = model.coef_[0]  # Coefficient of the regression line
+                
     return trend_results
 
 def detect_anomalies(df):
     """Detects anomalies using the Isolation Forest algorithm."""
     numeric_df = df.select_dtypes(include='number')
-    model = IsolationForest(n_estimators=100, contamination=0.05, random_state=42)
-    numeric_df['anomaly'] = model.fit_predict(numeric_df)
-    return numeric_df[numeric_df['anomaly'] == -1]
+    
+    if not numeric_df.empty:
+        model = IsolationForest(n_estimators=100, contamination=0.05, random_state=42)
+        numeric_df['anomaly'] = model.fit_predict(numeric_df)
+        return numeric_df[numeric_df['anomaly'] == -1]
+    
+    return pd.DataFrame()  # Return empty DataFrame if no numerical data
 
 def perform_hypothesis_testing(df, column_pairs):
     """Performs t-tests for specified pairs of columns."""
     results = {}
+    
     for col1, col2 in column_pairs:
-        stat, p_value = ttest_ind(df[col1].dropna(), df[col2].dropna())
-        results[(col1, col2)] = p_value
+        if col1 in df.columns and col2 in df.columns:
+            stat, p_value = ttest_ind(df[col1].dropna(), df[col2].dropna())
+            results[(col1, col2)] = p_value
+            
     return results
 
 # ========== 3. Visualization ==========
 def visualize_data(df, dataset_name):
     """Generates visualizations for the dataset with titles, axis labels, and legends."""
+    
+    # Pairplot for all numerical features
     sns.pairplot(df.select_dtypes(include='number'))
     plt.title(f"Pairplot of {dataset_name}")
     plt.savefig(f'{dataset_name}/pairplot.png')
-    plt.close()
     
+    # Histograms for each numerical feature
     for column in df.select_dtypes(include='number').columns:
         plt.figure()
         sns.histplot(df[column], kde=True, bins=30, color='skyblue')
@@ -104,8 +115,7 @@ def visualize_data(df, dataset_name):
         plt.ylabel("Frequency")
         plt.legend([f"Distribution of {column}"])
         plt.savefig(f'{dataset_name}/{column}_distribution.png')
-        plt.close()
-
+        
 # ========== 4. Narrative ==========
 def create_story(summary_stats, missing_values, correlation_matrix, outliers, trends, hypothesis_results, anomalies, dataset_description):
     """Creates a context-rich narrative summary for the analysis."""
@@ -128,7 +138,7 @@ Create a structured narrative summary of this data analysis with the following:
 1. Briefly describe the dataset.
 2. Explain the data analysis and key insights.
 3. Highlight surprising or significant findings.
-4. Discuss implications and suggested actions, especially for significant findings.
+4. Discuss implications and suggested actions based on significant findings.
 5. Ensure proper Markdown formatting for easy readability.
 6. Integrate visualizations at relevant points and emphasize significant findings.
 """
@@ -151,7 +161,7 @@ Create a structured narrative summary of this data analysis with the following:
 def efficient_llm_usage(data):
     """Minimize token usage by sending concise prompts to LLM."""
     
-    # Here, we only send relevant insights and summaries instead of large datasets.
+    # Here we only send relevant insights and summaries instead of large datasets.
     
     summary = data['summary_stats']
     
@@ -174,7 +184,7 @@ def dynamic_function_call(data, function_type="analysis"):
         return analyze_trends(data)
     
     elif function_type == "visualization":
-        return visualize_data(data, "dynamic_dataset")
+        visualize_data(data, "dynamic_dataset")  # Visualization doesn't need a return value
     
     elif function_type == "narrative":
         return create_story(data['summary_stats'], data['missing_values'], data['correlation_matrix'], data['outliers'], data['trends'], data['hypothesis_results'], data['anomalies'], "Sample Dataset")
@@ -184,10 +194,10 @@ def dynamic_function_call(data, function_type="analysis"):
 
 # ========== 7. Vision Agentic (Vision + Multiple LLM Calls) ==========
 def vision_agentic_workflow(df, dataset_name):
-    """Vision-based agentic workflow with multiple LLM calls."""
-    
-    visualize_data(df, dataset_name)  # First, generate visualizations
-    
+   """Vision-based agentic workflow with multiple LLM calls."""
+   
+   visualize_data(df, dataset_name)  # First generate visualizations
+   
    # Get summary and analysis
    summary_stats = get_summary_stats(df)
    missing_values = detect_missing_values(df)
