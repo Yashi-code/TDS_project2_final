@@ -161,36 +161,36 @@ Create a structured narrative summary of this data analysis with the following:
 def efficient_llm_usage(data):
     """Minimize token usage by sending concise prompts to LLM."""
     
-    # Here we only send relevant insights and summaries instead of large datasets.
+   # Here we only send relevant insights and summaries instead of large datasets.
     
-    summary = data['summary_stats']
+   summary_stats_str = data['summary_stats']  # Ensure summary stats are string formatted
     
-    insights = f"Key insights from the analysis: {summary}"
-    
-    return insights
+   insights = f"Key insights from the analysis:\n{summary_stats_str}"
+   
+   return insights
 
 # ========== 6. Dynamic Prompts and Function Calling ==========
 def generate_dynamic_prompt(data):
-    """Generates a dynamic prompt for LLM based on the dataset's specific features."""
-    
-    prompt = f"Analyze the dataset with the following properties:\n{data['features']}\nProvide insights into trends, correlations, and anomalies."
-    
-    return prompt
+   """Generates a dynamic prompt for LLM based on the dataset's specific features."""
+   
+   prompt = f"Analyze the dataset with the following properties:\n{data['features']}\nProvide insights into trends, correlations, and anomalies."
+   
+   return prompt
 
 def dynamic_function_call(data, function_type="analysis"):
-    """Dynamically call the appropriate function based on the data type."""
-    
-    if function_type == "analysis":
-        return analyze_trends(data)
-    
-    elif function_type == "visualization":
-        visualize_data(data, "dynamic_dataset")  # Visualization doesn't need a return value
-    
-    elif function_type == "narrative":
-        return create_story(data['summary_stats'], data['missing_values'], data['correlation_matrix'], data['outliers'], data['trends'], data['hypothesis_results'], data['anomalies'], "Sample Dataset")
-    
-    else:
-        return "Invalid function type."
+   """Dynamically call the appropriate function based on the data type."""
+   
+   if function_type == "analysis":
+       return analyze_trends(data)
+   
+   elif function_type == "visualization":
+       visualize_data(data, "dynamic_dataset")  # Visualization doesn't need a return value
+   
+   elif function_type == "narrative":
+       return create_story(data['summary_stats'], data['missing_values'], data['correlation_matrix'], data['outliers'], data['trends'], data['hypothesis_results'], data['anomalies'], "Sample Dataset")
+   
+   else:
+       return "Invalid function type."
 
 # ========== 7. Vision Agentic (Vision + Multiple LLM Calls) ==========
 def vision_agentic_workflow(df, dataset_name):
@@ -205,8 +205,9 @@ def vision_agentic_workflow(df, dataset_name):
    outliers = detect_outliers(df)
    trends = analyze_trends(df)
    anomalies = detect_anomalies(df)
-   
-   column_pairs = [('column1', 'column2'), ('column3', 'column4')]  # Update as needed
+
+   # Define pairs of columns for hypothesis testing (update as needed)
+   column_pairs = [('column1', 'column2'), ('column3', 'column4')]
    hypothesis_results = perform_hypothesis_testing(df, column_pairs)
 
    # Prepare the data for LLM processing
