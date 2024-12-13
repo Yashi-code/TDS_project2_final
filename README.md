@@ -1,4 +1,4 @@
-# tds_project2
+# Tds_project2
 # Automated Data Analysis
 
 ## Overview
